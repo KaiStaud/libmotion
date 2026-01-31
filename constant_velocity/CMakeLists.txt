@@ -1,0 +1,1 @@
+add_library(motion_constant_velocity constant_velocity.c)
