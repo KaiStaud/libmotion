@@ -18,10 +18,10 @@ enum ramp_error{
 };
 
 enum segment {
-  ramp_up,
-  constant,
-  ramp_down,
-  done,
+  ramp_up = 0,
+  constant = 1,
+  ramp_down = 2,
+  done = 3,
 };
 
 enum segment get_segment(struct trapezoidal_ramp* pparams, uint32_t t);

@@ -14,7 +14,7 @@ void move_pvm(uint32_t a_max, uint32_t v_max)
 double update(int t){
     // overwrite constant velocity segment
     if(get_segment(&ramp,t) == constant){
-        abort_ramp(&ramp);
+        //abort_ramp(&ramp);
         return ramp.v_max;
     }
     else{
