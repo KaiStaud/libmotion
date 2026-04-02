@@ -52,12 +52,12 @@ TEST_P(ParametrizedTest,MatchesSequence)
 {
     const auto& tc = GetParam();
     struct trapezoidal_ramp params;
-    params.v_max =4;
-    params.a_max=2;
-    move_to(&params,24);
-    EXPECT_EQ(params.t_acc,2);
-    EXPECT_EQ(params.t_const,4);
-    EXPECT_EQ(params.t_dcc,2);
+    params.v_max =3000;
+    params.a_max=1000;
+    move_to(&params,30000);
+    EXPECT_EQ(params.t_acc,3);
+    EXPECT_EQ(params.t_const,7);
+    EXPECT_EQ(params.t_dcc,3);
     EXPECT_EQ(ramp_update(&params,tc.t),tc.v);
     EXPECT_EQ(get_segment(&params,tc.t),tc.s);
 }
