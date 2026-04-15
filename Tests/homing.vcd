@@ -1,0 +1,48 @@
+$date
+   Thu Jan  1 00:00:00 1970
+$end
+$timescale
+   1ns
+$end
+$version
+   C++ Simple VCD Logger
+$end
+$scope module homing $end
+$scope module homing $end
+$var wire 32 ! controlword $end
+$var wire 32 " mode_of_operation $end
+$var wire 1 # input $end
+$var wire 1 $ output $end
+$var wire 8 % progress $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+bx !
+bx "
+x#
+x$
+bx %
+b0 !
+b0 "
+0#
+0$
+b0 %
+#1
+b0110 !
+b01 %
+#2
+b01 "
+b010 %
+#3
+b011110110 !
+b011 %
+#4
+1$
+b0100 %
+#5
+#6
+#7
+1#
+b0101 %
+#8

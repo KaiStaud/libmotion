@@ -10,8 +10,8 @@ add_library(vcd_tracer vcd_tracer.cpp)
 add_executable(test_motion test.cpp)
 target_link_libraries(test_motion
     PRIVATE
-        motion_tp_ramp
-        motion_constant_velocity
+        motion_linear_profiles
+        motion_homing
         GTest::gtest_main
         vcd_tracer
 )
