@@ -1,53 +1,70 @@
 #include <gtest/gtest.h>
-extern "C"
-{
-#include "../trapezoidal_ramp/trapezoidal_ramp.h"
-#include "../constant_velocity/constant_velocity.h"
-}
 
+// #include "../TrapezoidalRamp/TrapezoidalRamp.hpp"
+#include "../LinearProfiles/ConstantVelocity.hpp"
+#include "../LinearProfiles/LinearProfile.hpp"
+
+#include "rapidcsv.h"
 #include "vcd_tracer.hpp"
 #include <array>
 #include <cmath>
-#include <string>
 #include <fstream>
-#include "rapidcsv.h"
+#include <string>
 
-struct TestCase{
-    int t;
-    int v;
-    int x;
-    int s;
+struct TestCase {
+  int t;
+  int target_velocity;
+  int current_velocity;
+  int x;
+  int s;
 };
 
-inline std::vector<TestCase> LoadCSV(){
-    rapidcsv::Document doc("/home/kai/projects/canopen-ws/libmotion/tests/validation_data.csv", rapidcsv::LabelParams(0, -1));
-    size_t rows = doc.GetRowCount();
-    std::vector<TestCase> tests;
-    tests.reserve(rows);
-    for (size_t i=0; i<rows;++i)
-    {
-        TestCase tc;
-        tc.t=doc.GetCell<long long>("t", i);
-        tc.v=doc.GetCell<long long>("v", i);
-        tc.x=doc.GetCell<long long>("x", i);
-        tc.s=doc.GetCell<long long>("s", i);
+inline std::vector<TestCase> LoadCSV() {
+  rapidcsv::Document doc(
+      "/home/kai/projects/canopen-ws/libmotion/tests/ramp_up.csv",
+      rapidcsv::LabelParams(0, -1));
+  size_t rows = doc.GetRowCount();
+  std::vector<TestCase> tests;
+  tests.reserve(rows);
+  for (size_t i = 0; i < rows; ++i) {
+    TestCase tc;
+    tc.t = doc.GetCell<long long>("t", i);
+    tc.target_velocity = doc.GetCell<long long>("target_velocity", i);
+    tc.current_velocity = doc.GetCell<long long>("current_velocity", i);
+    tc.x = doc.GetCell<long long>("x", i);
+    tc.s = doc.GetCell<long long>("s", i);
 
-        tests.push_back(tc);
-    }
-    return tests;
+    tests.push_back(tc);
+  }
+  return tests;
 }
 
-
-class ParametrizedTest: public ::testing::TestWithParam<TestCase>{};
+class ParametrizedTest : public ::testing::TestWithParam<TestCase> {};
 
 static std::vector<TestCase> g_cases = LoadCSV();
-INSTANTIATE_TEST_SUITE_P(
-    CSVDrivenTests,
-    ParametrizedTest,
-    ::testing::ValuesIn(g_cases)
-);
+INSTANTIATE_TEST_SUITE_P(CSVDrivenTests, ParametrizedTest,
+                         ::testing::ValuesIn(g_cases));
 
+TEST(ConstantVelocity, ConstantVelocity) {
+  MotionProfile::ConstantVelocityProfile constantVelocity{};
+  constantVelocity.initialize(500.0);
+  EXPECT_EQ(constantVelocity.get_frequency(), 500.0);
+  EXPECT_EQ(constantVelocity.getSegment(), MotionProfile::segment::constant);
+}
 
+TEST_P(ParametrizedTest, LinearProfile_RampUp) {
+  constexpr double start_velocity = 0;
+  constexpr double acceleration = 1000;
+  constexpr double deceleration = 500;
+
+  const auto &tc = GetParam();
+  MotionProfile::LinearProfile rampUp{};
+  rampUp.initialize(start_velocity, acceleration, deceleration);
+  EXPECT_EQ(rampUp.calculate_frequency(tc.target_velocity, tc.t),
+            tc.current_velocity);
+}
+
+/*
 TEST_P(ParametrizedTest,MatchesSequence)
 {
     const auto& tc = GetParam();
@@ -107,3 +124,4 @@ TEST(LibMotion,TrapezoidalRamp)
         dumper.time_update_abs(fout, std::chrono::nanoseconds{ i });
     }
 }
+*/

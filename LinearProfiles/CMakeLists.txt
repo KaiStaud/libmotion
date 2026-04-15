@@ -1,0 +1,2 @@
+add_library(motion_linear_profiles ConstantVelocity.cpp
+LinearProfile.cpp)
