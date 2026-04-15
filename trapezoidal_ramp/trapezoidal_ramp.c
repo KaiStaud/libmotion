@@ -2,7 +2,7 @@
 
 #include <math.h>
 enum segment get_segment(struct trapezoidal_ramp* pparams, uint32_t t) {
-  if (t <= pparams->t_acc) {
+  if (t < pparams->t_acc) {
     return ramp_up;
   } else if (t < (pparams->t_acc + pparams->t_const)) {
     return constant;
