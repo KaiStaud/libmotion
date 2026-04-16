@@ -1,30 +1,33 @@
 #include "LinearProfile.hpp"
 
-namespace MotionProfile {
+namespace motion_profile {
 
-segment LinearProfile::getSegment() { return seg; }
-double LinearProfile::get_frequency() { return v; }
-void LinearProfile::initialize(double p_v0, double p_a_max_acc,
-                               double p_a_max_dcc) {
-  v0 = p_v0;
-  v = p_v0;
-  a_max_acc = p_a_max_acc;
-  a_max_dcc = p_a_max_dcc;
+segment LinearProfile::getSegment() {
+  return seg_;
+}
+double LinearProfile::getFrequency() {
+  return v_;
+}
+void LinearProfile::initialize(double p_v0, double p_a_max_acc, double p_a_max_dcc) {
+  v0_ = p_v0;
+  v_ = p_v0;
+  a_max_acc_ = p_a_max_acc;
+  a_max_dcc_ = p_a_max_dcc;
 }
 
-double LinearProfile::calculate_frequency(double p_v_set, int t) {
-  if (v < p_v_set) {
-    a = a_max_acc;
-    seg = segment::ramp_up;
-  } else if (v > p_v_set) {
-    a = -a_max_dcc;
-    seg = segment::ramp_down;
+double LinearProfile::calculateFrequency(double p_v_set, int t) {
+  if (v_ < p_v_set) {
+    a_ = a_max_acc_;
+    seg_ = segment::ramp_up;
+  } else if (v_ > p_v_set) {
+    a_ = -a_max_dcc_;
+    seg_ = segment::ramp_down;
   } else {
-    a = 0;
-    seg = segment::done;
+    a_ = 0;
+    seg_ = segment::done;
   }
 
-  v = v0 + a * t;
-  return v;
+  v_ = v0_ + (a_ * t);
+  return v_;
 }
-} // namespace MotionProfile
+}  // namespace motion_profile

@@ -1,15 +1,15 @@
 #pragma once
 #include "MotionStrategy.hpp"
 
-namespace MotionProfile {
+namespace motion_profile {
 
 class ConstantVelocityProfile : public MotionStrategy {
-public:
-  segment getSegment();
-  double get_frequency();
+ public:
+  auto getSegment() -> segment override;
+  auto getFrequency() -> double override;
   void initialize(double p_v);
 
-private:
-  double v;
+ private:
+  double v_{};
 };
-} // namespace MotionProfile
+}  // namespace motion_profile

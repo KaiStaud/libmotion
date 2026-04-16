@@ -1,29 +1,22 @@
 #pragma once
-
 #include <memory>
+#include <utility>
 
-// Forward Declaration → reduziert Compile-Abhängigkeiten
-class MotionStrategy;
+#include "../LinearProfiles/MotionStrategy.hpp"
 
-class TrapezoidalRamp {
-public:
-    // Konstruktor (explizit + ownership transfer)
-    explicit TrapezoidalRamp(std::unique_ptr<MotionStrategy> strategy = nullptr) noexcept;
+namespace motion_profile {
+class Context {
+  std::unique_ptr<motion_profile::MotionStrategy> motion_strat_;
 
-    // Rule of 5 (unique_ptr → kein Copy, nur Move)
-    TrapezoidalRamp(const TrapezoidalRamp&) = delete;
-    TrapezoidalRamp& operator=(const TrapezoidalRamp&) = delete;
-    TrapezoidalRamp(TrapezoidalRamp&&) noexcept = default;
-    TrapezoidalRamp& operator=(TrapezoidalRamp&&) noexcept = default;
+ public:
+  void setStrategy(std::unique_ptr<motion_profile::MotionStrategy> strat) {
+    strat = std::move(strat);
+  }
 
-    ~TrapezoidalRamp(); // out-of-line wegen forward declaration
-
-    // Strategy setzen
-    void set_strategy(std::unique_ptr<MotionStrategy> strategy) noexcept;
-
-    // Zugriff (optional)
-    [[nodiscard]] const MotionStrategy* get_strategy() const noexcept;
-
-private:
-    std::unique_ptr<MotionStrategy> strategy_;
+  void getFrequency() {
+    if (motion_strat_) {
+      motion_strat_->getFrequency();
+    }
+  }
 };
+}  // namespace motion_profile

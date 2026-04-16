@@ -1,8 +1,8 @@
 #pragma once
-#include <stdint.h>
+#include <cstdint>
 
-namespace MotionProfile {
-enum class segment {
+namespace motion_profile {
+enum class segment : uint8_t {
   ramp_up = 0,
   constant = 1,
   ramp_down = 2,
@@ -10,9 +10,15 @@ enum class segment {
 };
 
 class MotionStrategy {
+ public:
+  virtual segment getSegment() = 0;   // NOLINT
+  virtual double getFrequency() = 0;  // NOLINT
 
-  segment getSegment() = delete;
-  double get_frequency() = delete;
+  virtual ~MotionStrategy() = default;
+  MotionStrategy(MotionStrategy&&) = default;
+  MotionStrategy() = default;
+  MotionStrategy(const MotionStrategy&) = delete;
+  auto operator=(const MotionStrategy&) -> MotionStrategy& = delete;
 };
 
-} // namespace MotionProfile
+}  // namespace motion_profile

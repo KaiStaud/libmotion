@@ -1,2 +1,2 @@
-add_library(motion_tp_ramp TrapezoidalRamp.cpp)
-target_link_libraries(motion_tp_ramp m)
+#add_library(motion_tp_ramp TrapezoidalRamp.cpp)
+#target_link_libraries(motion_tp_ramp m)

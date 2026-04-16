@@ -1,38 +1,33 @@
 #include <gtest/gtest.h>
 
-// #include "../TrapezoidalRamp/TrapezoidalRamp.hpp"
+#include <string>
+
 #include "../LinearProfiles/ConstantVelocity.hpp"
 #include "../LinearProfiles/LinearProfile.hpp"
-
+#include "../TrapezoidalRamp/TrapezoidalRamp.hpp"
 #include "rapidcsv.h"
 #include "vcd_tracer.hpp"
-#include <array>
-#include <cmath>
-#include <fstream>
-#include <string>
 
 struct TestCase {
   int t;
-  int target_velocity;
-  int current_velocity;
-  int x;
-  int s;
+  double target_velocity;
+  double current_velocity;
+  double x;
+  double s;
 };
 
-inline std::vector<TestCase> LoadCSV(const std::string& path) {
-  rapidcsv::Document doc(
-      path,
-      rapidcsv::LabelParams(0, -1));
+inline auto loadCSV(const std::string& path) -> std::vector<TestCase> {
+  rapidcsv::Document doc(path, rapidcsv::LabelParams(0, -1));
   size_t rows = doc.GetRowCount();
   std::vector<TestCase> tests;
   tests.reserve(rows);
   for (size_t i = 0; i < rows; ++i) {
-    TestCase tc;
-    tc.t = doc.GetCell<long long>("t", i);
-    tc.target_velocity = doc.GetCell<long long>("target_velocity", i);
-    tc.current_velocity = doc.GetCell<long long>("current_velocity", i);
-    tc.x = doc.GetCell<long long>("x", i);
-    tc.s = doc.GetCell<long long>("s", i);
+    TestCase tc{};
+    tc.t = doc.GetCell<int>("t", i);
+    tc.target_velocity = doc.GetCell<double>("target_velocity", i);
+    tc.current_velocity = doc.GetCell<double>("current_velocity", i);
+    tc.x = doc.GetCell<double>("x", i);
+    tc.s = doc.GetCell<double>("s", i);
 
     tests.push_back(tc);
   }
@@ -40,60 +35,50 @@ inline std::vector<TestCase> LoadCSV(const std::string& path) {
 }
 
 class LinearProfileTestBase {
-protected:
+ protected:
   static constexpr double acceleration = 1000;
   static constexpr double deceleration = 500;
 
-  void run_test(const std::string& filename, double start_velocity) {
-    MotionProfile::LinearProfile ramp{};
+  void runTest(const std::string& filename, double start_velocity) {
+    motion_profile::LinearProfile ramp{};
     ramp.initialize(start_velocity, acceleration, deceleration);
 
-    auto cases = LoadCSV(filename);
+    auto cases = loadCSV(filename);
 
-    for (const auto &tc : cases) {
-      EXPECT_EQ(ramp.calculate_frequency(tc.target_velocity, tc.t),
-                tc.current_velocity);
+    for (const auto& testcase : cases) {
+      EXPECT_EQ(ramp.calculateFrequency(testcase.target_velocity, testcase.t),
+                testcase.current_velocity);
     }
   }
 };
 
-class ParameterizedRampUpTest
-    : public ::testing::TestWithParam<std::string>,
-      protected LinearProfileTestBase {};
+class ParameterizedRampUpTest : public ::testing::TestWithParam<std::string>,
+                                protected LinearProfileTestBase {};
 
-class ParameterizedRampDownTest
-    : public ::testing::TestWithParam<std::string>,
-      protected LinearProfileTestBase {};
+class ParameterizedRampDownTest : public ::testing::TestWithParam<std::string>,
+                                  protected LinearProfileTestBase {};
 
-INSTANTIATE_TEST_SUITE_P(
-    RampUpTests,
-    ParameterizedRampUpTest,
-    ::testing::Values("ramp_up.csv")
-);
+INSTANTIATE_TEST_SUITE_P(RampUpTests, ParameterizedRampUpTest, ::testing::Values("ramp_up.csv"));
 
-INSTANTIATE_TEST_SUITE_P(
-    RampDownTests,
-    ParameterizedRampDownTest,
-    ::testing::Values("ramp_down.csv")
-);
+INSTANTIATE_TEST_SUITE_P(RampDownTests, ParameterizedRampDownTest,
+                         ::testing::Values("ramp_down.csv"));
 
 TEST(ConstantVelocity, ConstantVelocity) {
-  MotionProfile::ConstantVelocityProfile constantVelocity{};
-  constantVelocity.initialize(500.0);
-  EXPECT_EQ(constantVelocity.get_frequency(), 500.0);
-  EXPECT_EQ(constantVelocity.getSegment(), MotionProfile::segment::constant);
+  constexpr double start_velocity = 500.0;
+  motion_profile::ConstantVelocityProfile constant_velocity{};
+  constant_velocity.initialize(start_velocity);
+  EXPECT_EQ(constant_velocity.getFrequency(), 500.0);
+  EXPECT_EQ(constant_velocity.getSegment(), motion_profile::segment::constant);
 }
 
 TEST_P(ParameterizedRampUpTest, LinearProfile_RampUp) {
-
   constexpr double start_velocity = 0;
-  run_test(GetParam(), start_velocity);
+  runTest(GetParam(), start_velocity);
 }
 
 TEST_P(ParameterizedRampDownTest, LinearProfile_RampDown) {
-
   constexpr double start_velocity = 4000;
-  run_test(GetParam(), start_velocity);
+  runTest(GetParam(), start_velocity);
 }
 /*
 TEST(LibMotion,TrapezoidalRamp)

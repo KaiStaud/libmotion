@@ -1,8 +1,14 @@
 #include "ConstantVelocity.hpp"
 
-namespace MotionProfile {
+namespace motion_profile {
 
-  segment ConstantVelocityProfile::getSegment(){return segment::constant;};
-  double ConstantVelocityProfile::get_frequency(){return v;};
-  void ConstantVelocityProfile::initialize(double p_v){v=p_v;};
-} // namespace MotionProfile
+segment ConstantVelocityProfile::getSegment() {
+  return segment::constant;
+};
+double ConstantVelocityProfile::getFrequency() {
+  return v_;
+};
+void ConstantVelocityProfile::initialize(double p_v) {
+  v_ = p_v;
+};
+}  // namespace motion_profile
