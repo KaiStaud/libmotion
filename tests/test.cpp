@@ -19,9 +19,9 @@ struct TestCase {
   int s;
 };
 
-inline std::vector<TestCase> LoadCSV() {
+inline std::vector<TestCase> LoadCSV(const std::string& path) {
   rapidcsv::Document doc(
-      "/home/kai/projects/canopen-ws/libmotion/tests/ramp_up.csv",
+      path,
       rapidcsv::LabelParams(0, -1));
   size_t rows = doc.GetRowCount();
   std::vector<TestCase> tests;
@@ -39,11 +39,43 @@ inline std::vector<TestCase> LoadCSV() {
   return tests;
 }
 
-class ParametrizedTest : public ::testing::TestWithParam<TestCase> {};
+class LinearProfileTestBase {
+protected:
+  static constexpr double acceleration = 1000;
+  static constexpr double deceleration = 500;
 
-static std::vector<TestCase> g_cases = LoadCSV();
-INSTANTIATE_TEST_SUITE_P(CSVDrivenTests, ParametrizedTest,
-                         ::testing::ValuesIn(g_cases));
+  void run_test(const std::string& filename, double start_velocity) {
+    MotionProfile::LinearProfile ramp{};
+    ramp.initialize(start_velocity, acceleration, deceleration);
+
+    auto cases = LoadCSV(filename);
+
+    for (const auto &tc : cases) {
+      EXPECT_EQ(ramp.calculate_frequency(tc.target_velocity, tc.t),
+                tc.current_velocity);
+    }
+  }
+};
+
+class ParameterizedRampUpTest
+    : public ::testing::TestWithParam<std::string>,
+      protected LinearProfileTestBase {};
+
+class ParameterizedRampDownTest
+    : public ::testing::TestWithParam<std::string>,
+      protected LinearProfileTestBase {};
+
+INSTANTIATE_TEST_SUITE_P(
+    RampUpTests,
+    ParameterizedRampUpTest,
+    ::testing::Values("ramp_up.csv")
+);
+
+INSTANTIATE_TEST_SUITE_P(
+    RampDownTests,
+    ParameterizedRampDownTest,
+    ::testing::Values("ramp_down.csv")
+);
 
 TEST(ConstantVelocity, ConstantVelocity) {
   MotionProfile::ConstantVelocityProfile constantVelocity{};
@@ -52,53 +84,18 @@ TEST(ConstantVelocity, ConstantVelocity) {
   EXPECT_EQ(constantVelocity.getSegment(), MotionProfile::segment::constant);
 }
 
-TEST_P(ParametrizedTest, LinearProfile_RampUp) {
+TEST_P(ParameterizedRampUpTest, LinearProfile_RampUp) {
+
   constexpr double start_velocity = 0;
-  constexpr double acceleration = 1000;
-  constexpr double deceleration = 500;
-
-  const auto &tc = GetParam();
-  MotionProfile::LinearProfile rampUp{};
-  rampUp.initialize(start_velocity, acceleration, deceleration);
-  EXPECT_EQ(rampUp.calculate_frequency(tc.target_velocity, tc.t),
-            tc.current_velocity);
+  run_test(GetParam(), start_velocity);
 }
 
+TEST_P(ParameterizedRampDownTest, LinearProfile_RampDown) {
+
+  constexpr double start_velocity = 4000;
+  run_test(GetParam(), start_velocity);
+}
 /*
-TEST_P(ParametrizedTest,MatchesSequence)
-{
-    const auto& tc = GetParam();
-    struct trapezoidal_ramp params;
-    params.v_max =3000;
-    params.a_max=1000;
-    move_to(&params,30000);
-    EXPECT_EQ(params.t_acc,3);
-    EXPECT_EQ(params.t_const,7);
-    EXPECT_EQ(params.t_dcc,3);
-    EXPECT_EQ(ramp_update(&params,tc.t),tc.v);
-    EXPECT_EQ(get_segment(&params,tc.t),tc.s);
-}
-
-TEST(LibMotion,Segment)
-{
-    struct trapezoidal_ramp params;
-    params.v_max =4;
-    params.a_max=2;
-    move_to(&params,24);
-    EXPECT_EQ(params.t_acc,2);
-    EXPECT_EQ(params.t_const,4);
-    EXPECT_EQ(params.t_dcc,2);
-    EXPECT_EQ(ramp_update(&params,0),0);
-    EXPECT_EQ(ramp_update(&params,1),2);
-    EXPECT_EQ(ramp_update(&params,2),4);
-    EXPECT_EQ(ramp_update(&params,3),4);
-    EXPECT_EQ(ramp_update(&params,4),4);
-    EXPECT_EQ(ramp_update(&params,5),4);
-    EXPECT_EQ(ramp_update(&params,6),4);
-    EXPECT_EQ(ramp_update(&params,7),2);
-    EXPECT_EQ(ramp_update(&params,8),0);
-}
-
 TEST(LibMotion,TrapezoidalRamp)
 {
     vcd_tracer::value<uint32_t>vset;
