@@ -5,11 +5,11 @@ namespace motion_profile {
 
 class ConstantVelocityProfile : public MotionStrategy {
  public:
-  auto getSegment() -> segment override;
-  auto getFrequency() -> double override;
-  void initialize(double p_v);
+  auto GetSegment() -> Segment override;
+  auto GetFrequency(int t) -> double override;
+  auto Parameterize(TargetConstraints constraints) -> void override;
 
  private:
-  double v_{};
+  double v_ = 0;
 };
 }  // namespace motion_profile

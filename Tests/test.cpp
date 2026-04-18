@@ -39,15 +39,18 @@ class LinearProfileTestBase {
   static constexpr double acceleration = 1000;
   static constexpr double deceleration = 500;
 
-  void runTest(const std::string& filename, double start_velocity) {
+  void runTest(const std::string& filename, double start_velocity, double target_velocity) {
     motion_profile::LinearProfile ramp{};
-    ramp.initialize(start_velocity, acceleration, deceleration);
+    motion_profile::TargetConstraints constraints{.acceleration = acceleration,
+                                                  .deceleration = deceleration,
+                                                  .end_velocity = target_velocity,
+                                                  .start_velocity = start_velocity};
+    ramp.Parameterize(constraints);
 
     auto cases = loadCSV(filename);
 
     for (const auto& testcase : cases) {
-      EXPECT_EQ(ramp.calculateFrequency(testcase.target_velocity, testcase.t),
-                testcase.current_velocity);
+      EXPECT_EQ(ramp.CalculateFrequency(testcase.t), testcase.current_velocity);
     }
   }
 };
@@ -58,27 +61,61 @@ class ParameterizedRampUpTest : public ::testing::TestWithParam<std::string>,
 class ParameterizedRampDownTest : public ::testing::TestWithParam<std::string>,
                                   protected LinearProfileTestBase {};
 
+class ParameterizedTrapezoidalTest : public ::testing::TestWithParam<std::string>,
+                                     protected LinearProfileTestBase {};
+
 INSTANTIATE_TEST_SUITE_P(RampUpTests, ParameterizedRampUpTest, ::testing::Values("ramp_up.csv"));
 
 INSTANTIATE_TEST_SUITE_P(RampDownTests, ParameterizedRampDownTest,
                          ::testing::Values("ramp_down.csv"));
 
+INSTANTIATE_TEST_SUITE_P(TrapezoidalTests, ParameterizedTrapezoidalTest,
+                         ::testing::Values("trapezoidal.csv"));
+
 TEST(ConstantVelocity, ConstantVelocity) {
   constexpr double start_velocity = 500.0;
   motion_profile::ConstantVelocityProfile constant_velocity{};
-  constant_velocity.initialize(start_velocity);
-  EXPECT_EQ(constant_velocity.getFrequency(), 500.0);
-  EXPECT_EQ(constant_velocity.getSegment(), motion_profile::segment::constant);
+  motion_profile::TargetConstraints constraints{.acceleration = 0.0,
+                                                .deceleration = 0.0,
+                                                .end_velocity = start_velocity,
+                                                .start_velocity = start_velocity};
+  constant_velocity.Parameterize(constraints);
+
+  EXPECT_EQ(constant_velocity.GetFrequency(0), 500.0);
+  EXPECT_EQ(constant_velocity.GetSegment(), motion_profile::Segment::kConstant);
 }
 
 TEST_P(ParameterizedRampUpTest, LinearProfile_RampUp) {
   constexpr double start_velocity = 0;
-  runTest(GetParam(), start_velocity);
+  constexpr double target_velocity = 3000;
+
+  runTest(GetParam(), start_velocity, target_velocity);
 }
 
 TEST_P(ParameterizedRampDownTest, LinearProfile_RampDown) {
   constexpr double start_velocity = 4000;
-  runTest(GetParam(), start_velocity);
+  constexpr double target_velocity = 0;
+
+  runTest(GetParam(), start_velocity, target_velocity);
+}
+
+TEST_P(ParameterizedTrapezoidalTest, TrapezoidalProfile) {
+  constexpr double start_velocity = 0;
+  constexpr double constant_velocity = 3000.0;
+  motion_profile::TargetConstraints constraints{.acceleration = acceleration,
+                                                .deceleration = deceleration,
+                                                .end_velocity = constant_velocity,
+                                                .start_velocity = 0.0};
+
+  constexpr double target_position = 30000;
+  motion_profile::TrapezoidalRamp trapezoidal_ramp(constraints);
+  trapezoidal_ramp.CalculateTimes(target_position);
+  auto cases = loadCSV(GetParam());
+
+  for (const auto& testcase : cases) {
+    EXPECT_EQ(trapezoidal_ramp.GetFrequency(testcase.t), testcase.current_velocity)
+        << "failed at t= " << testcase.t;
+  }
 }
 /*
 TEST(LibMotion,TrapezoidalRamp)
@@ -97,7 +134,7 @@ TEST(LibMotion,TrapezoidalRamp)
     vset.set(4);
     v.set(0);
     struct trapezoidal_ramp params;
-    params.v_max =4;
+    params.end_velocity =4;
     params.a_max=2;
     move_to(&params,24);
     for (int i=0;i<9;i++)

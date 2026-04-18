@@ -2,17 +2,25 @@
 #include <cstdint>
 
 namespace motion_profile {
-enum class segment : uint8_t {
-  ramp_up = 0,
-  constant = 1,
-  ramp_down = 2,
-  done = 3,
+enum class Segment : uint8_t {
+  kRampUp = 0,
+  kConstant = 1,
+  kRampDown = 2,
+  kDone = 3,
 };
+
+struct TargetConstraints  {
+  double acceleration; /* acceleration */
+  double deceleration; /* deceleration w/o sign */
+  double end_velocity; /* end velocity */
+  double start_velocity; /* start velocity */
+} ;
 
 class MotionStrategy {
  public:
-  virtual segment getSegment() = 0;   // NOLINT
-  virtual double getFrequency() = 0;  // NOLINT
+  virtual auto GetSegment() -> Segment = 0;
+  virtual auto GetFrequency(int t) -> double = 0;
+  virtual auto Parameterize(TargetConstraints constraints) -> void = 0;
 
   virtual ~MotionStrategy() = default;
   MotionStrategy(MotionStrategy&&) = default;

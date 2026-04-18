@@ -2,31 +2,33 @@
 
 namespace motion_profile {
 
-segment LinearProfile::getSegment() {
+auto LinearProfile::GetSegment() -> Segment{
   return seg_;
 }
-double LinearProfile::getFrequency() {
-  return v_;
-}
-void LinearProfile::initialize(double p_v0, double p_a_max_acc, double p_a_max_dcc) {
-  v0_ = p_v0;
-  v_ = p_v0;
-  a_max_acc_ = p_a_max_acc;
-  a_max_dcc_ = p_a_max_dcc;
+auto LinearProfile::GetFrequency(int t) -> double{
+  return CalculateFrequency(t);
 }
 
-double LinearProfile::calculateFrequency(double p_v_set, int t) {
-  if (v_ < p_v_set) {
+auto LinearProfile::Parameterize(TargetConstraints constraints) -> void {
+  a_max_acc_ = constraints.acceleration;
+  a_max_dcc_ = constraints.deceleration;
+  v_set_ = constraints.end_velocity;
+  v0_ = constraints.start_velocity;
+  v_ = constraints.start_velocity;
+}
+
+auto LinearProfile::CalculateFrequency(int t) -> double {
+  if (v_ < v_set_) {
     a_ = a_max_acc_;
-    seg_ = segment::ramp_up;
-  } else if (v_ > p_v_set) {
+    seg_ = Segment::kRampUp;
+  } else if (v_ > v_set_) {
     a_ = -a_max_dcc_;
-    seg_ = segment::ramp_down;
+    seg_ = Segment::kRampDown;
   } else {
     a_ = 0;
-    seg_ = segment::done;
+    seg_ = Segment::kDone;
+    return v_set_;
   }
-
   v_ = v0_ + (a_ * t);
   return v_;
 }

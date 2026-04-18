@@ -4,6 +4,6 @@ set(CXX_STANDARD 22)
 
 add_subdirectory(LinearProfiles)
 add_subdirectory(TrapezoidalRamp)
-add_subdirectory(tests)
+add_subdirectory(Tests)
 include(CTest)
 enable_testing()

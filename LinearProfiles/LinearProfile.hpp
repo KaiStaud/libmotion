@@ -5,24 +5,26 @@ namespace motion_profile {
 
 class LinearProfile : public MotionStrategy {
  public:
-  segment getSegment() override;
-  double getFrequency() override;
-  void initialize(double p_v0, double p_a_max_acc, double p_a_max_dcc);
+  auto GetSegment() -> Segment override;
+  auto GetFrequency(int t) -> double override;
   /*
   @param p_v_set : target velocity in Hz
   @param t : elapsed time after start in ticks
   @return : frequency after t
   */
-  double calculateFrequency(double p_v_set, int t);
+  auto CalculateFrequency(int t) -> double;
+  auto Parameterize(TargetConstraints constraints) -> void override;
+
 
  private:
-  double t_acc_;
-  double v_;
-  double a_max_acc_;
-  double a_max_dcc_;
+  double t_acc_ = 0;
+  double v_ = 0;
+  double a_max_acc_ = 0;
+  double a_max_dcc_ = 0;
 
-  double v0_;
-  double a_;
-  segment seg_;
+  double v_set_ = 0;
+  double v0_ = 0;
+  double a_ = 0;
+  Segment seg_ = Segment::kDone;
 };
 }  // namespace motion_profile

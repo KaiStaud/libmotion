@@ -2,13 +2,13 @@
 
 namespace motion_profile {
 
-segment ConstantVelocityProfile::getSegment() {
-  return segment::constant;
+auto ConstantVelocityProfile::GetSegment() -> Segment {
+  return Segment::kConstant;
 };
-double ConstantVelocityProfile::getFrequency() {
+auto ConstantVelocityProfile::GetFrequency(int t) -> double {
   return v_;
 };
-void ConstantVelocityProfile::initialize(double p_v) {
-  v_ = p_v;
+auto ConstantVelocityProfile::Parameterize(TargetConstraints constraints) -> void {
+  v_ = constraints.end_velocity;
 };
 }  // namespace motion_profile
