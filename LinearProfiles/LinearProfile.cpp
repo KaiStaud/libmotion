@@ -2,10 +2,10 @@
 
 namespace motion_profile {
 
-auto LinearProfile::GetSegment() -> Segment{
+auto LinearProfile::GetSegment() -> Segment {
   return seg_;
 }
-auto LinearProfile::GetFrequency(int t) -> double{
+auto LinearProfile::GetFrequency(int t) -> double {
   return CalculateFrequency(t);
 }
 

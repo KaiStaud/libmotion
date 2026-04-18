@@ -9,12 +9,12 @@ enum class Segment : uint8_t {
   kDone = 3,
 };
 
-struct TargetConstraints  {
-  double acceleration; /* acceleration */
-  double deceleration; /* deceleration w/o sign */
-  double end_velocity; /* end velocity */
+struct TargetConstraints {
+  double acceleration;   /* acceleration */
+  double deceleration;   /* deceleration w/o sign */
+  double end_velocity;   /* end velocity */
   double start_velocity; /* start velocity */
-} ;
+};
 
 class MotionStrategy {
  public:

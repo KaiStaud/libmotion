@@ -1,10 +1,13 @@
 #include <gtest/gtest.h>
 
+#include <cstdint>
 #include <string>
 
 #include "../LinearProfiles/ConstantVelocity.hpp"
 #include "../LinearProfiles/LinearProfile.hpp"
 #include "../TrapezoidalRamp/TrapezoidalRamp.hpp"
+#include "../Homing/Homing.hpp"
+#include "magic_enum.hpp"
 #include "rapidcsv.h"
 #include "vcd_tracer.hpp"
 
@@ -14,6 +17,15 @@ struct TestCase {
   double current_velocity;
   double x;
   double s;
+};
+
+struct HomingTestCase {
+  int t;
+  int ControlWord;
+  int ModeOfOperation;
+  int Input;
+  int Output;
+  motion_profile::homing::Progress Progress;
 };
 
 inline auto loadCSV(const std::string& path) -> std::vector<TestCase> {
@@ -29,6 +41,25 @@ inline auto loadCSV(const std::string& path) -> std::vector<TestCase> {
     tc.x = doc.GetCell<double>("x", i);
     tc.s = doc.GetCell<double>("s", i);
 
+    tests.push_back(tc);
+  }
+  return tests;
+}
+
+inline auto loadHomingCSV(const std::string& path) -> std::vector<HomingTestCase> {
+  rapidcsv::Document doc(path, rapidcsv::LabelParams(0, -1));
+  size_t rows = doc.GetRowCount();
+  std::vector<HomingTestCase> tests;
+  tests.reserve(rows);
+  for (size_t i = 0; i < rows; ++i) {
+    HomingTestCase tc{};
+    tc.t = doc.GetCell<int>("t", i);
+    tc.ControlWord = doc.GetCell<int>("ControlWord", i);
+    tc.ModeOfOperation = doc.GetCell<int>("ModeOfOperation", i);
+    tc.Input = doc.GetCell<int>("Input", i);
+    tc.Output = doc.GetCell<int>("Output", i);
+    auto progress_string=doc.GetCell<std::string>("Progress", i);
+    tc.Progress = magic_enum::enum_cast<motion_profile::homing::Progress>(progress_string).value();
     tests.push_back(tc);
   }
   return tests;
@@ -117,30 +148,88 @@ TEST_P(ParameterizedTrapezoidalTest, TrapezoidalProfile) {
         << "failed at t= " << testcase.t;
   }
 }
-/*
-TEST(LibMotion,TrapezoidalRamp)
+
+/* Homing Tests */
+/* Mock Hardware States */
+uint32_t controlword_ = 0;
+uint32_t mode_of_operation_ = 0;
+bool input_ = 0;
+bool output_ = 0;
+uint8_t progress_ = 0;
+
+/* Hardware IO-Functions */
+auto read_gpo()-> bool{
+return input_;
+}
+
+auto read_object(uint16_t index,uint8_t subindex) -> uint32_t //NOLINT
 {
-    vcd_tracer::value<uint32_t>vset;
-    vcd_tracer::value<uint32_t>v;
-    vcd_tracer::top dumper("generators");
+  constexpr int index_controlword = 0x6060;
+  constexpr int index_homing_method = 0x6098;
+
+  if (index == index_controlword){
+    return controlword_;
+  }
+  else if(index == index_homing_method){
+    return mode_of_operation_;
+  }
+  return 0;
+}
+
+auto enable_drive() -> void{
+output_ = true;
+}
+
+auto disable_drive() -> void{
+output_ = false;
+}
+
+TEST(LibMotion,Homing)
+{
+  auto cases = loadHomingCSV("homing.csv");
+motion_profile::homing::HomingController ctrl(
+    read_object,
+    read_gpo,
+    disable_drive,
+    enable_drive);
+
+    vcd_tracer::value<uint32_t>controlword;
+    vcd_tracer::value<uint32_t>mode_of_operation;
+    vcd_tracer::value<bool>input;
+    vcd_tracer::value<bool>output;
+    vcd_tracer::value<uint8_t>progress;
+    vcd_tracer::top dumper("homing");
     {
-        vcd_tracer::module analog(dumper.root, "tp_ramp");
-        analog.elaborate(vset, "set_speed");
-        analog.elaborate(v,"actual_speed");
+        vcd_tracer::module digital(dumper.root, "homing");
+        digital.elaborate(controlword, "controlword");
+        digital.elaborate(mode_of_operation, "mode_of_operation");
+        digital.elaborate(input,"input");
+        digital.elaborate(output,"output");
+        digital.elaborate(progress,"progress");
+
     }
-    std::ofstream fout("tp_ramp.vcd");
+    std::ofstream fout("homing.vcd");
     dumper.finalize_header(fout,std::chrono::system_clock::from_time_t(0));
 
-    vset.set(4);
-    v.set(0);
-    struct trapezoidal_ramp params;
-    params.end_velocity =4;
-    params.a_max=2;
-    move_to(&params,24);
-    for (int i=0;i<9;i++)
-    {
-        v.set(ramp_update(&params,i));
-        dumper.time_update_abs(fout, std::chrono::nanoseconds{ i });
-    }
+  for (const auto& testcase : cases) {
+    // Signals are valid between two absolute time updates.
+    // Therefore time_update_abs needs to be called before assigning signals.
+    dumper.time_update_abs(fout, std::chrono::nanoseconds{ testcase.t });
+    // **First** write the hardware state!
+    // progress and output are not assigned. They will be calculated from ctrl.Update() !
+    input_ = testcase.Input;
+    controlword_ = testcase.ControlWord;
+    mode_of_operation_ = testcase.ModeOfOperation;
+    // *Then** update the dump
+    input.set(input_);
+    controlword.set(controlword_);
+    mode_of_operation.set(mode_of_operation_);
+    auto tprogress = ctrl.Update();
+    progress_ = magic_enum::enum_integer(tprogress);
+    progress.set(progress_); // **Only** valid after Update()
+    output.set(output_);
+
+    EXPECT_EQ(tprogress, testcase.Progress)
+        << "failed at t= " << testcase.t;
+      }
 }
-*/

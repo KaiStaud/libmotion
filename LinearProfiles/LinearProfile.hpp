@@ -15,7 +15,6 @@ class LinearProfile : public MotionStrategy {
   auto CalculateFrequency(int t) -> double;
   auto Parameterize(TargetConstraints constraints) -> void override;
 
-
  private:
   double t_acc_ = 0;
   double v_ = 0;
