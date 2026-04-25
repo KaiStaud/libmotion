@@ -1,0 +1,10 @@
+t,ControlWord,ModeOfOperation,Input,Output,Progress
+0,000,0,0,0,kDisabled
+1,006,0,0,0,kOpModeConfigured
+2,006,1,0,0,kProfileConfigured
+3,246,1,0,1,kStarted
+4,246,1,0,1,kActive
+5,246,1,0,1,kActive
+6,246,1,0,1,kActive
+7,246,1,1,0,kDone
+8,246,1,1,0,kDone

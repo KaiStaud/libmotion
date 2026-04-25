@@ -1,2 +1,0 @@
-add_library(motion_tp_ramp trapezoidal_ramp.c)
-target_link_libraries(motion_tp_ramp m)
