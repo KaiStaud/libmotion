@@ -27,6 +27,7 @@ class MotionStrategy {
   MotionStrategy() = default;
   MotionStrategy(const MotionStrategy&) = delete;
   auto operator=(const MotionStrategy&) -> MotionStrategy& = delete;
+  auto operator=(MotionStrategy&&) -> MotionStrategy& = default;
 };
 
 }  // namespace motion_profile

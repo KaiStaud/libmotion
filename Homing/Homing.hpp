@@ -26,7 +26,7 @@ class HomingController {
 
   auto Update() -> Progress;
   [[nodiscard]] auto state() const -> Progress;
-
+  auto GetFrequency(int t) -> double;
  private:
   // --- State ---
   Progress state_ = Progress::kDisabled;

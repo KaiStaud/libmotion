@@ -12,6 +12,7 @@ target_link_libraries(test_motion
     PRIVATE
         motion_linear_profiles
         motion_homing
+        motion_manager
         GTest::gtest_main
         vcd_tracer
 )

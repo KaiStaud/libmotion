@@ -4,6 +4,7 @@ set(CXX_STANDARD 22)
 
 add_subdirectory(LinearProfiles)
 add_subdirectory(TrapezoidalRamp)
+add_subdirectory(MotionManager)
 add_subdirectory(Homing)
 add_subdirectory(Tests)
 include(CTest)

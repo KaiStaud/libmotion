@@ -57,4 +57,8 @@ Progress HomingController::state() const {
   return state_;
 }
 
+auto HomingController::GetFrequency(int t) -> double {
+  return 0;
+}
+
 }  // namespace motion_profile::homing

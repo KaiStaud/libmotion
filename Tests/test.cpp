@@ -7,6 +7,7 @@
 #include "../LinearProfiles/LinearProfile.hpp"
 #include "../TrapezoidalRamp/TrapezoidalRamp.hpp"
 #include "../Homing/Homing.hpp"
+#include "../MotionManager/MotionManager.hpp"
 #include "magic_enum.hpp"
 #include "rapidcsv.h"
 #include "vcd_tracer.hpp"
@@ -232,4 +233,59 @@ motion_profile::homing::HomingController ctrl(
     EXPECT_EQ(tprogress, testcase.Progress)
         << "failed at t= " << testcase.t;
       }
+}
+
+TEST(MotionManager,ModesOfOperation)
+{
+  motion_manager::MotionManager manager(
+    read_object,
+    read_gpo,
+    disable_drive,
+    enable_drive);
+
+    constexpr uint8_t kProfilePositionMode = 1;
+    constexpr uint8_t kProfileVelocityMode = 3;
+    constexpr uint8_t kHomingMode =6;
+    motion_profile::TargetConstraints target_contstraints{
+      .acceleration= 1000,
+      .deceleration= 500,
+      .end_velocity = 5000,
+      .start_velocity=  0
+    };
+    manager.Initialize(target_contstraints);
+    EXPECT_EQ(manager.RequestMode(kProfilePositionMode),motion_manager::MotionModes::kProfilePositionMode);
+    EXPECT_EQ(manager.RequestMode(kProfileVelocityMode),motion_manager::MotionModes::kProfileVelocityMode);
+    EXPECT_EQ(manager.RequestMode(kHomingMode),motion_manager::MotionModes::kHomingMode);
+}
+
+
+TEST(MotionManager,GetFrequency)
+{
+  motion_manager::MotionManager manager(
+    read_object,
+    read_gpo,
+    disable_drive,
+    enable_drive);
+
+    constexpr uint8_t kProfilePositionMode = 1;
+    constexpr uint8_t kProfileVelocityMode = 3;
+    constexpr uint8_t kHomingMode =6;
+
+    constexpr double kAcceleration= 1000.0;
+    constexpr double kDeceleration= 500.0;
+    constexpr double kEndVelocity = 5000.0;
+    constexpr double kStartVelocity=  0.0;
+    motion_profile::TargetConstraints target_contstraints{
+      .acceleration= kAcceleration,
+      .deceleration= kDeceleration,
+      .end_velocity = kEndVelocity,
+      .start_velocity=  kStartVelocity
+    };
+
+    manager.Initialize(target_contstraints);
+    EXPECT_EQ(manager.RequestMode(kProfilePositionMode),motion_manager::MotionModes::kProfilePositionMode);
+    EXPECT_EQ(manager.GetFrequency(0), kEndVelocity);
+    //EXPECT_EQ(manager.RequestMode(kProfileVelocityMode),motion_manager::MotionModes::kProfileVelocityMode);
+    EXPECT_EQ(manager.RequestMode(kHomingMode),motion_manager::MotionModes::kHomingMode);
+    EXPECT_EQ(manager.GetFrequency(0), kEndVelocity);
 }
